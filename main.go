@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"strconv"
+
 	"github.com/lxn/walk"
 	pdfcpu "github.com/pdfcpu/pdfcpu/pkg/api"
 )
@@ -46,11 +49,13 @@ func (mw *myApp) showNoneMessage(message string) {
 var app = new(myApp)
 var desc = new(waterDesc)
 var cbox = new(cBox)
+var viewProcess []string
+var viewFile []string
 var showAboutBoxAction *walk.Action
 
-// var wg sync.WaitGroup
 func init() {
 	app.title = "文档水印处理-泛生态业务线"
+
 	//desc.color = &walk.ComboBox{}
 
 	//app.model = NewEnvModel()
@@ -64,10 +69,23 @@ func init() {
 		}*/
 
 }
+func reprocessing() {
+	// 清理预览进程 ，无语问苍天
+	for _, pid := range viewProcess {
+		p, _ := strconv.Atoi(pid)
+		KillAll(p)
+	}
+	// 清理预览临时文件，无语问苍天
+	for _, file := range viewFile {
+		os.RemoveAll(file)
+	}
+}
 func main() {
 	_ = getWindows()
 	walk.App().SetProductName(app.title)
 	walk.App().SetOrganizationName("泛生态业务线")
+	//brush, _ := walk.NewSolidColorBrush(walk.RGB(0, 255, 0))
+	//app.mw.SetBackground(brush)
 	app.mw.Show()
 	app.mw.Run()
 }
