@@ -6,6 +6,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+outDir
+Output
 Îpdftools.exe
 
 # Dependency directories (remove the comment below to include it)
