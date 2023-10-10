@@ -9,24 +9,30 @@ import (
 )
 
 type myApp struct {
-	mw            *walk.MainWindow
-	title         string
-	pdfDir_export *walk.LineEdit // pdf文件目录
-	imgDir        *walk.LineEdit // 图像文件目录
-	msg           *walk.TextEdit //
-	selectDir     *walk.PushButton
-	markView      *walk.PushButton
-	//tabPage       *walk.TabPage
+	mw             *walk.MainWindow
+	title          string
+	pdfDir_export  *walk.LineEdit // pdf文件目录
+	imgDir_single  *walk.LineEdit // 图像文件目录
+	imgDir_batch   *walk.LineEdit // 图像文件目录
+	msg            *walk.TextEdit //
+	pdfpath        *walk.PushButton
+	pdfpath_export *walk.PushButton
+	markView       *walk.PushButton
+	exitbtn        *walk.PushButton
+	tabwatermark   *walk.TabPage
+	tabimage       *walk.TabPage
 }
 type waterDesc struct {
-	pdfDir   *walk.LineEdit // pdf文件目录
-	waterTxt *walk.LineEdit // 水印文本
-	opacity  string         // 透明度
-	color    string         // 颜色
-	bgcolor  *walk.ComboBox // 颜色
-	rotation string         // 旋转
-	font     string         // 水印文本字体
-	points   string         // 水印文本字号
+	pdfDir    *walk.LineEdit // pdf文件目录
+	waterTxt  *walk.LineEdit // 水印文本
+	opacity   string         // 透明度
+	color     string         // 颜色
+	bgcolor   *walk.ComboBox // 颜色
+	rotation  string         // 旋转
+	font      string         // 水印文本字体
+	points    string         // 水印文本字号
+	addbtn    *walk.PushButton
+	exportbtn *walk.PushButton
 }
 type cBox struct {
 	opacity  *walk.ComboBox // 透明度
@@ -55,7 +61,6 @@ var showAboutBoxAction *walk.Action
 
 func init() {
 	app.title = "文档水印处理-泛生态业务线"
-
 	//desc.color = &walk.ComboBox{}
 
 	//app.model = NewEnvModel()
@@ -81,6 +86,8 @@ func reprocessing() {
 	}
 }
 func main() {
+	InitLogger()
+	//SugarLogger.Info("程序启动了......")
 	_ = getWindows()
 	walk.App().SetProductName(app.title)
 	walk.App().SetOrganizationName("泛生态业务线")

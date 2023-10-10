@@ -52,8 +52,9 @@ func getWindows() error {
 						Pages: []TabPage{
 							// 水印操作
 							TabPage{
+								AssignTo:   &app.tabwatermark,
 								Title:      "水印操作",
-								Font:       Font{Family: "微软雅黑", PointSize: 9},
+								Font:       Font{Family: "微软雅黑", PointSize: 10},
 								Background: SolidColorBrush{Color: walk.RGB(240, 240, 240)},
 								Layout:     VBox{},
 								Children: []Widget{
@@ -77,16 +78,20 @@ func getWindows() error {
 												MaxSize: Size{Width: 132, Height: 30},
 												Children: []Widget{
 													PushButton{
-														AssignTo: &app.selectDir,
+														AssignTo: &app.pdfpath,
 														MaxSize:  Size{Width: 60, Height: 30},
 														Text:     "选择",
+														Font:     Font{PointSize: 10},
 														OnClicked: func() {
 															dlg := new(walk.FileDialog)
 
 															dlg.Title = "选择需要增加水印的文件所在的目录"
 															dlg.ShowBrowseFolder(app.mw)
 															desc.pdfDir.SetText(dlg.FilePath)
-															app.pdfDir_export.SetText(dlg.FilePath + "\\_out_")
+															if dlg.FilePath != "" {
+																app.pdfDir_export.SetText(dlg.FilePath + "\\_out_")
+															}
+
 														},
 													},
 												},
@@ -107,6 +112,7 @@ func getWindows() error {
 														AssignTo: &app.markView,
 														MaxSize:  Size{Width: 60, Height: 30},
 														Text:     "预览",
+														Font:     Font{PointSize: 10},
 														OnClicked: func() {
 															//desc.waterTxt.SetText("")
 															go markView(*desc)
@@ -127,12 +133,12 @@ func getWindows() error {
 												MaxSize: Size{Width: 132, Height: 30},
 												Children: []Widget{
 													PushButton{
-														AssignTo: &app.selectDir,
+														AssignTo: &app.pdfpath_export,
 														MaxSize:  Size{Width: 60, Height: 30},
 														Text:     "选择",
+														Font:     Font{PointSize: 10},
 														OnClicked: func() {
 															dlg := new(walk.FileDialog)
-
 															dlg.Title = "选择需要增加水印的文件所在的目录"
 															dlg.ShowBrowseFolder(app.mw)
 															app.pdfDir_export.SetText(dlg.FilePath)
@@ -297,25 +303,31 @@ func getWindows() error {
 										Layout: HBox{},
 										Children: []Widget{
 											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Enabled: true,
-												Text:    "添加水印",
+												AssignTo: &desc.addbtn,
+												MinSize:  Size{Width: 121, Height: 30},
+												Enabled:  true,
+												Text:     "添加水印",
+												Font:     Font{Family: "微软雅黑", PointSize: 11},
 												OnClicked: func() {
 													go addWatermark(*desc)
 												},
 											},
 											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Text:    "导出PDF",
-												Enabled: true,
+												AssignTo: &desc.exportbtn,
+												MinSize:  Size{Width: 121, Height: 30},
+												Text:     "导出PDF",
+												Font:     Font{Family: "微软雅黑", PointSize: 11},
+												Enabled:  true,
 												OnClicked: func() {
-													go exportImagesFile()
+													go exportImagesFile111()
 												},
 											},
 
 											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Text:    "关闭退出",
+												AssignTo: &app.exitbtn,
+												MinSize:  Size{Width: 121, Height: 30},
+												Text:     "关闭退出",
+												Font:     Font{Family: "微软雅黑", PointSize: 11},
 												OnClicked: func() {
 													reprocessing()
 													// 无语的等待
@@ -331,23 +343,26 @@ func getWindows() error {
 
 							// 转换操作tab页
 							TabPage{
+								AssignTo:   &app.tabimage,
 								Title:      "转换操作",
 								Font:       Font{Family: "微软雅黑", PointSize: 9},
 								Layout:     Grid{Columns: 2},
 								MaxSize:    Size{Width: 220, Height: 20},
 								Background: SolidColorBrush{Color: walk.RGB(240, 240, 240)},
+								//Visible:    false,
+								//Enabled:    false,
 								Children: []Widget{
 									GroupBox{
-										Title:  "文件设置",
-										Layout: Grid{Columns: 3},
+										Title:  "图片转pdf",
+										Layout: Grid{Columns: 4},
 										Children: []Widget{
 											Label{
-												Text: "文件目录:",
-												//MinSize:   Size{220, 30},
+												Text: "图片目录:",
+												//MinSize: Size{220, 30},
 												//TextColor: walk.RGB(255, 255, 0)
 											},
 											LineEdit{
-												AssignTo: &app.imgDir,
+												AssignTo: &app.imgDir_single,
 												ReadOnly: true,
 												MaxSize:  Size{Width: 320, Height: 30}},
 											Composite{
@@ -361,32 +376,38 @@ func getWindows() error {
 														OnClicked: func() {
 															dlg := new(walk.FileDialog)
 															//dlg.FilePath = mw.prevFilePath
-															dlg.Filter = "图像文件s (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
-															dlg.Title = "选择图像文件"
-															if ok, err := dlg.ShowOpen(app.mw); err != nil {
-																showMsg("选择文件错误：" + err.Error())
-															} else if !ok {
-																showMsg("选择文件错误：" + err.Error())
-															}
-
-															//if err := importImagesFile([]string{dlg.FilePath}, dlg.FilePath+".pdf"); err != nil {
-															//	showMsg("图像转换错误：" + err.Error())
-															//} else {
-															//	showMsg("图像转换完成：" + dlg.FilePath + ".pdf")
-															//}
-															app.imgDir.SetText(dlg.FilePath)
+															dlg.Filter = "图片文件(*.bmp;*.jpg;*.png;)|*.bmp;*.jpg;*.png"
+															dlg.Title = "选择一个图片文件"
+															dlg.ShowOpen(app.mw)
+														},
+													},
+													PushButton{
+														//AssignTo: &app.selectDir,
+														MaxSize: Size{Width: 60, Height: 30},
+														Text:    "转换",
+														Font:    Font{Family: "微软雅黑", PointSize: 9, Bold: true},
+														OnClicked: func() {
+															img2pdf(app.imgDir_single.Text())
 														},
 													},
 												},
 											},
+										},
+									},
+									GroupBox{
+										Title: "批量图片转pdf",
+
+										Layout: Grid{Columns: 3},
+										Children: []Widget{
 											Label{
-												Text: "输出目录:"},
-											TextEdit{
-												//AssignTo: &desc.waterTxt,
-												VScroll:  true,
-												HScroll:  false,
-												ReadOnly: false},
-											//MaxSize:  Size{320, 30}},
+												Text: "图片目录:",
+												//MinSize:   Size{220, 30},
+												//TextColor: walk.RGB(255, 255, 0)
+											},
+											LineEdit{
+												AssignTo: &app.imgDir_batch,
+												ReadOnly: true,
+												MaxSize:  Size{Width: 320, Height: 30}},
 											Composite{
 												Layout:  HBox{},
 												MaxSize: Size{Width: 132, Height: 30},
@@ -396,110 +417,31 @@ func getWindows() error {
 														MaxSize: Size{Width: 60, Height: 30},
 														Text:    "选择",
 														OnClicked: func() {
-															//desc.waterTxt.SetText("")
+															dlg := new(walk.FileDialog)
+
+															dlg.Title = "选择需要转换的图片文件所在的目录"
+															dlg.ShowBrowseFolder(app.mw)
+															app.imgDir_batch.SetText(dlg.FilePath)
+															//app.pdfDir_export.SetText(dlg.FilePath + "\\_out_")
+														},
+													},
+													PushButton{
+														//AssignTo: &app.selectDir,
+														MaxSize: Size{Width: 60, Height: 30},
+														Text:    "转换",
+														Font:    Font{Family: "微软雅黑", PointSize: 9, Bold: true},
+														OnClicked: func() {
+															go img2pdf(app.imgDir_batch.Text())
+
 														},
 													},
 												},
 											},
 										},
 									},
-									GroupBox{
-										Title:  "参数设置",
-										Layout: Grid{Columns: 6},
-										//MaxSize: Size{Width: 800, Height: 400},
-										Children: []Widget{
-											Label{Text: "颜 色："},
-											ComboBox{
-												//AssignTo: &desc.color,
-												//	Model:    app.model,
-												//Model:        []string{"1", "2", "3", "4", "5"},
-												Model: []string{"黑色", "红色", "蓝色", "灰色", "浅灰", "深灰", "绿色"},
-
-												MinSize:      Size{Width: 120, Height: 30},
-												CurrentIndex: 0,
-												//Font:           Font{PointSize: 1},
-												//Value:         Bind("value", SelRequired{}),
-												//BindingMember: "name",
-												//DisplayMember: "value",
-											},
-											Label{Text: "背 景："},
-											ComboBox{
-												//AssignTo:     &desc.bgcolor,
-												Model:        []string{"0.2", "0.4", "0.6", "0.8"},
-												MinSize:      Size{Width: 120, Height: 30},
-												CurrentIndex: 0,
-											},
-											Label{Text: "透 明："},
-											ComboBox{
-												//AssignTo:     &desc.opacity,
-												Model:        []string{"0.2", "0.4", "0.6", "0.8"},
-												MinSize:      Size{Width: 120, Height: 30},
-												CurrentIndex: 0,
-											},
-
-											Label{Text: "旋 转："},
-
-											ComboBox{
-												//AssignTo: &desc.rotation,
-												Model: []string{"0.2", "0.4", "0.6", "0.8"},
-												//MaxSize:      Size{Width: 320, Height: 30},
-												CurrentIndex: 0,
-											},
-											Label{Text: "字 体："},
-											ComboBox{
-												//AssignTo: &desc.font,
-												//	Model:    app.model,
-												//Model:        []string{"1", "2", "3", "4", "5"},
-												Model: []string{"宋体", "楷体"},
-
-												MaxSize:      Size{Width: 320, Height: 30},
-												CurrentIndex: 0,
-											},
-
-											Label{Text: "字号："},
-											ComboBox{
-												//	AssignTo: &desc.points,
-												Model: []string{"0.2", "0.4", "0.6", "0.8"},
-												//MaxSize:      Size{Width: 320, Height: 30},
-												CurrentIndex: 0,
-											},
-										},
-									},
 									Composite{
 										Layout: HBox{},
 										Children: []Widget{
-											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Enabled: true,
-												Text:    "图像转pdf",
-												OnClicked: func() {
-													dlg := new(walk.FileDialog)
-													//dlg.FilePath = mw.prevFilePath
-													dlg.Filter = "图像文件s (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
-													dlg.Title = "选择图像文件"
-													if ok, err := dlg.ShowOpen(app.mw); err != nil {
-														showMsg("选择文件错误：" + err.Error())
-														return
-													} else if !ok {
-														return
-													}
-
-													if err := importImagesFile([]string{dlg.FilePath}, dlg.FilePath+".pdf"); err != nil {
-														showMsg("图像转换错误：" + err.Error())
-													} else {
-														showMsg("图像转换完成：" + dlg.FilePath + ".pdf")
-													}
-													//app.pdfDir.SetText(dlg.FilePath)
-												},
-											},
-
-											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Text:    "导出PDF",
-												OnClicked: func() {
-													go exportImagesFile()
-												},
-											},
 											PushButton{
 												MinSize: Size{Width: 121, Height: 30},
 												Text:    "关闭退出",
@@ -513,178 +455,182 @@ func getWindows() error {
 								},
 							},
 							// 导出tab页
-							TabPage{
-								Title:      "导出操作",
-								Font:       Font{Family: "微软雅黑", PointSize: 9},
-								Layout:     VBox{},
-								Background: SolidColorBrush{Color: walk.RGB(240, 240, 240)},
-								Children: []Widget{
-									GroupBox{
-										Title:  "文件设置",
-										Layout: Grid{Columns: 3},
-										Children: []Widget{
-											Label{
-												Text: "文件目录:",
-												//MinSize:   Size{220, 30},
-												//TextColor: walk.RGB(255, 255, 0)
-											},
-											LineEdit{
-												// 文件导出源目录
-												//AssignTo: &app.pdfDir_export,
-												ReadOnly: true,
-												MaxSize:  Size{Width: 320, Height: 30}},
-											Composite{
-												Layout:  HBox{},
-												MaxSize: Size{Width: 132, Height: 30},
-												Children: []Widget{
-													PushButton{
-														AssignTo: &app.selectDir,
-														MaxSize:  Size{Width: 60, Height: 30},
-														Text:     "选择",
-														OnClicked: func() {
-															//walk.App().Exit(0)
-															dlg := new(walk.FileDialog)
-															//	dlg.FilePath = app.filePath
-															//dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
-															dlg.Title = "选择PDF文件目录"
-															dlg.ShowBrowseFolder(app.mw)
+							/*
+								TabPage{
+									Title:      "导出操作",
+									Font:       Font{Family: "微软雅黑", PointSize: 9},
+									Layout:     VBox{},
+									Background: SolidColorBrush{Color: walk.RGB(240, 240, 240)},
+									Visible:    false,
+									Enabled:    false,
+									Children: []Widget{
+										GroupBox{
+											Title:  "文件设置",
+											Layout: Grid{Columns: 3},
+											Children: []Widget{
+												Label{
+													Text: "文件目录:",
+													//MinSize:   Size{220, 30},
+													//TextColor: walk.RGB(255, 255, 0)
+												},
+												LineEdit{
+													// 文件导出源目录
+													//AssignTo: &app.pdfDir_export,
+													ReadOnly: true,
+													MaxSize:  Size{Width: 320, Height: 30}},
+												Composite{
+													Layout:  HBox{},
+													MaxSize: Size{Width: 132, Height: 30},
+													Children: []Widget{
+														PushButton{
+															AssignTo: &app.selectDir,
+															MaxSize:  Size{Width: 60, Height: 30},
+															Text:     "选择",
+															OnClicked: func() {
+																//walk.App().Exit(0)
+																dlg := new(walk.FileDialog)
+																//	dlg.FilePath = app.filePath
+																//dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
+																dlg.Title = "选择PDF文件目录"
+																dlg.ShowBrowseFolder(app.mw)
 
-															app.pdfDir_export.SetText(dlg.FilePath)
+																app.pdfDir_export.SetText(dlg.FilePath)
+															},
 														},
 													},
 												},
-											},
-											Label{
-												Text: "水印文本:"},
-											TextEdit{
-												//AssignTo: &desc.waterTxt,
-												VScroll:  true,
-												HScroll:  false,
-												ReadOnly: false},
-											//MaxSize:  Size{320, 30}},
-											Composite{
-												Layout:  HBox{},
-												MaxSize: Size{Width: 132, Height: 30},
-												Children: []Widget{
-													PushButton{
-														//AssignTo: &app.selectDir,
-														MaxSize: Size{Width: 60, Height: 30},
-														Text:    "清空",
-														OnClicked: func() {
-															desc.waterTxt.SetText("")
+												Label{
+													Text: "水印文本:"},
+												TextEdit{
+													//AssignTo: &desc.waterTxt,
+													VScroll:  true,
+													HScroll:  false,
+													ReadOnly: false},
+												//MaxSize:  Size{320, 30}},
+												Composite{
+													Layout:  HBox{},
+													MaxSize: Size{Width: 132, Height: 30},
+													Children: []Widget{
+														PushButton{
+															//AssignTo: &app.selectDir,
+															MaxSize: Size{Width: 60, Height: 30},
+															Text:    "清空",
+															OnClicked: func() {
+																desc.waterTxt.SetText("")
+															},
 														},
 													},
 												},
 											},
 										},
-									},
-									GroupBox{
-										Title:  "参数设置",
-										Layout: Grid{Columns: 6},
-										//MaxSize: Size{Width: 800, Height: 400},
-										Children: []Widget{
-											Label{Text: "颜 色："},
-											ComboBox{
-												//AssignTo: &desc.color,
-												//	Model:    app.model,
-												//Model:        []string{"1", "2", "3", "4", "5"},
-												Model: []string{"黑色", "红色", "蓝色", "灰色", "浅灰", "深灰", "绿色"},
+										GroupBox{
+											Title:  "参数设置",
+											Layout: Grid{Columns: 6},
+											//MaxSize: Size{Width: 800, Height: 400},
+											Children: []Widget{
+												Label{Text: "颜 色："},
+												ComboBox{
+													//AssignTo: &desc.color,
+													//	Model:    app.model,
+													//Model:        []string{"1", "2", "3", "4", "5"},
+													Model: []string{"黑色", "红色", "蓝色", "灰色", "浅灰", "深灰", "绿色"},
 
-												MinSize:      Size{Width: 120, Height: 30},
-												CurrentIndex: 0,
-												//Font:           Font{PointSize: 1},
-												//Value:         Bind("value", SelRequired{}),
-												//BindingMember: "name",
-												//DisplayMember: "value",
-											},
-											Label{Text: "背 景："},
-											ComboBox{
-												//AssignTo:     &desc.bgcolor,
-												Model:        []string{"0.2", "0.4", "0.6", "0.8"},
-												MinSize:      Size{Width: 120, Height: 30},
-												CurrentIndex: 0,
-											},
-											Label{Text: "透 明："},
-											ComboBox{
-												//AssignTo:     &desc.opacity,
-												Model:        []string{"0.2", "0.4", "0.6", "0.8"},
-												MinSize:      Size{Width: 120, Height: 30},
-												CurrentIndex: 0,
-											},
+													MinSize:      Size{Width: 120, Height: 30},
+													CurrentIndex: 0,
+													//Font:           Font{PointSize: 1},
+													//Value:         Bind("value", SelRequired{}),
+													//BindingMember: "name",
+													//DisplayMember: "value",
+												},
+												Label{Text: "背 景："},
+												ComboBox{
+													//AssignTo:     &desc.bgcolor,
+													Model:        []string{"0.2", "0.4", "0.6", "0.8"},
+													MinSize:      Size{Width: 120, Height: 30},
+													CurrentIndex: 0,
+												},
+												Label{Text: "透 明："},
+												ComboBox{
+													//AssignTo:     &desc.opacity,
+													Model:        []string{"0.2", "0.4", "0.6", "0.8"},
+													MinSize:      Size{Width: 120, Height: 30},
+													CurrentIndex: 0,
+												},
 
-											Label{Text: "旋 转："},
+												Label{Text: "旋 转："},
 
-											ComboBox{
-												//AssignTo: &desc.rotation,
-												Model: []string{"0.2", "0.4", "0.6", "0.8"},
-												//MaxSize:      Size{Width: 320, Height: 30},
-												CurrentIndex: 0,
-											},
-											Label{Text: "字 体："},
-											ComboBox{
-												//AssignTo: &desc.font,
-												//	Model:    app.model,
-												//Model:        []string{"1", "2", "3", "4", "5"},
-												Model: []string{"宋体", "楷体"},
+												ComboBox{
+													//AssignTo: &desc.rotation,
+													Model: []string{"0.2", "0.4", "0.6", "0.8"},
+													//MaxSize:      Size{Width: 320, Height: 30},
+													CurrentIndex: 0,
+												},
+												Label{Text: "字 体："},
+												ComboBox{
+													//AssignTo: &desc.font,
+													//	Model:    app.model,
+													//Model:        []string{"1", "2", "3", "4", "5"},
+													Model: []string{"宋体", "楷体"},
 
-												MaxSize:      Size{Width: 320, Height: 30},
-												CurrentIndex: 0,
-											},
+													MaxSize:      Size{Width: 320, Height: 30},
+													CurrentIndex: 0,
+												},
 
-											Label{Text: "字号："},
-											ComboBox{
-												//AssignTo: &desc.points,
-												Model: []string{"0.2", "0.4", "0.6", "0.8"},
-												//MaxSize:      Size{Width: 320, Height: 30},
-												CurrentIndex: 0,
+												Label{Text: "字号："},
+												ComboBox{
+													//AssignTo: &desc.points,
+													Model: []string{"0.2", "0.4", "0.6", "0.8"},
+													//MaxSize:      Size{Width: 320, Height: 30},
+													CurrentIndex: 0,
+												},
 											},
 										},
-									},
-									Composite{
-										Layout: HBox{},
-										Children: []Widget{
-											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Enabled: true,
-												Text:    "图像转pdf",
-												OnClicked: func() {
-													dlg := new(walk.FileDialog)
-													//dlg.FilePath = mw.prevFilePath
-													dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
-													dlg.Title = "Select an Image"
-													if ok, err := dlg.ShowOpen(app.mw); err != nil {
-														showMsg("选择文件错误：" + err.Error())
-													} else if !ok {
-														showMsg("选择文件错误：" + err.Error())
-													}
+										Composite{
+											Layout: HBox{},
+											Children: []Widget{
+												PushButton{
+													MinSize: Size{Width: 121, Height: 30},
+													Enabled: true,
+													Text:    "图像转pdf",
+													OnClicked: func() {
+														dlg := new(walk.FileDialog)
+														//dlg.FilePath = mw.prevFilePath
+														dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
+														dlg.Title = "Select an Image"
+														if ok, err := dlg.ShowOpen(app.mw); err != nil {
+															showMsg("选择文件错误：" + err.Error())
+														} else if !ok {
+															showMsg("选择文件错误：" + err.Error())
+														}
 
-													if err := importImagesFile([]string{dlg.FilePath}, dlg.FilePath+".pdf"); err != nil {
-														showMsg("图像转换错误：" + err.Error())
-													} else {
-														showMsg("图像转换完成：" + dlg.FilePath + ".pdf")
-													}
-													//app.pdfDir.SetText(dlg.FilePath)
+														if err := importImagesFile([]string{dlg.FilePath}, dlg.FilePath+".pdf"); err != nil {
+															showMsg("图像转换错误：" + err.Error())
+														} else {
+															showMsg("图像转换完成：" + dlg.FilePath + ".pdf")
+														}
+														//app.pdfDir.SetText(dlg.FilePath)
+													},
 												},
-											},
-											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Text:    "导出PDF",
-												OnClicked: func() {
-													go exportImagesFile()
+												PushButton{
+													MinSize: Size{Width: 121, Height: 30},
+													Text:    "导出PDF",
+													OnClicked: func() {
+														go exportImagesFile()
+													},
 												},
-											},
-											PushButton{
-												MinSize: Size{Width: 121, Height: 30},
-												Text:    "关闭退出",
-												OnClicked: func() {
-													walk.App().Exit(0)
+												PushButton{
+													MinSize: Size{Width: 121, Height: 30},
+													Text:    "关闭退出",
+													OnClicked: func() {
+														walk.App().Exit(0)
 
+													},
 												},
 											},
 										},
 									},
 								},
-							},
+							*/
 						},
 					},
 					GroupBox{
@@ -693,21 +639,21 @@ func getWindows() error {
 
 						Children: []Widget{
 							PushButton{
-								MinSize: Size{Width: 80, Height: 30},
+								MinSize: Size{Width: 80, Height: 20},
 								Text:    "清除日志",
 								OnClicked: func() {
 									app.msg.SetText("")
 
 								},
 							},
-							TextEdit{AssignTo: &app.msg, HScroll: true, VScroll: true, ReadOnly: true, Font: Font{PointSize: 14}, MinSize: Size{Width: 132, Height: 200}},
+							TextEdit{AssignTo: &app.msg, HScroll: true, VScroll: true, ReadOnly: true, Font: Font{PointSize: 14}, MinSize: Size{Width: 132, Height: 150}},
 						},
 					},
 				},
 			},
 		},
 		OnSizeChanged: func() {
-			_ = app.mw.SetSize(walk.Size(Size{Width: 500, Height: 360}))
+			_ = app.mw.SetSize(walk.Size(Size{Width: 500, Height: 260}))
 		},
 	}.Create()
 	winLong := win.GetWindowLong(app.mw.Handle(), win.GWL_STYLE)
